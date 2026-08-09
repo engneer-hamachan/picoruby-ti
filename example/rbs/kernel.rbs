@@ -2,7 +2,7 @@
 
 module Kernel
   # Inspect and output object
-  def p: (*untyped objects) -> self
+  def p: (*untyped objects) -> untyped
 
   # Output object
   def print: (*untyped objects) -> nil
@@ -10,7 +10,7 @@ module Kernel
   # Output object with newline
   def puts: (*untyped objects) -> nil
 
-  def yield: (*untyped arguments) -> self
+  def yield: (*untyped arguments) -> untyped
 
   # Create Proc object
   def proc: () { (untyped argument) -> untyped } -> Proc
