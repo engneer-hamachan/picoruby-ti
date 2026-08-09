@@ -1,5 +1,4 @@
-PROJECT_ROOT := ../..
-PRISM_ROOT := $(PROJECT_ROOT)/picoruby/mrbgems/mruby-compiler2/lib/prism
+PRISM_ROOT := ../lib/prism
 SOURCE_ROOT := ../src
 SOURCE_DIRS := base builtin context diagnostic eval eval/method_evaluator hover suggest
 ENGINE_SOURCES := \

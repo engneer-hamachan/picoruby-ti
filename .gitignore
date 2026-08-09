@@ -2,4 +2,8 @@
 /src/generated/
 /lsp/build/
 /lsp/picoruby-ti-lsp
+/host_test/build/
+/host_test/test_builtin
+/host_test/test_eval
+/host_test/test_suggest
 sample.rb
