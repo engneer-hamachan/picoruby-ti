@@ -23,6 +23,14 @@ picoruby-ti has the following features:
 
 ### Prerequisites
 
+#### Initialize the Git submodules
+
+After cloning the repository, initialize the Prism submodule:
+
+```sh
+git submodule update --init --recursive
+```
+
 #### Generate the type database
 
 Before building either the LSP server or a PicoRuby integration, generate the
