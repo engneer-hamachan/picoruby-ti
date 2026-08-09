@@ -1,0 +1,5 @@
+/sig/
+/src/generated/
+/lsp/build/
+/lsp/picoruby-ti-lsp
+sample.rb
