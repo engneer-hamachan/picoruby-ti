@@ -3,7 +3,7 @@
 #include <mrubyc.h>
 
 void
-mrbc_picoruby_ti_init(mrbc_vm *virtual_machine) {
+mrbc_ti_init(mrbc_vm *virtual_machine) {
   (void)virtual_machine;
 }
 
@@ -12,12 +12,12 @@ mrbc_picoruby_ti_init(mrbc_vm *virtual_machine) {
 #include <mruby.h>
 
 void
-mrb_picoruby_picoruby_ti_gem_init(mrb_state *state) {
+mrb_picoruby_ti_gem_init(mrb_state *state) {
   (void)state;
 }
 
 void
-mrb_picoruby_picoruby_ti_gem_final(mrb_state *state) {
+mrb_picoruby_ti_gem_final(mrb_state *state) {
   (void)state;
 }
 
