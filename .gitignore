@@ -1,4 +1,4 @@
-/sig/
+/sig/*.rbs
 /src/generated/
 /lsp/build/
 /lsp/picoruby-ti-lsp
