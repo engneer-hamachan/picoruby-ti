@@ -36,9 +36,11 @@ class String
 
   # Get character or substring at specified position
   def []: (untyped index_or_range) -> (String | nil)
+        | (Integer start, Integer length) -> (String | nil)
 
   # Replace character or substring at specified position
   def []=: (untyped index_or_range, String replacement) -> String
+         | (Integer start, Integer length, String replacement) -> String
 
   # Internal method for argument checking of ljust and rjust
   def __ljust_rjust_argcheck: ((Integer | String) width_or_padding) -> nil
@@ -123,6 +125,7 @@ class String
 
   # Get character or substring at specified position
   def slice: (untyped index_or_range) -> (String | nil)
+           | (Integer start, Integer length) -> (String | nil)
 
   # Split by delimiter and return array
   def split: (?String separator, ?Integer limit) -> Array[String]

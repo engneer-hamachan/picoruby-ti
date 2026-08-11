@@ -7,7 +7,8 @@ class Array
            | (Integer start, Integer length, untyped value) -> untyped
 
   # Get element at specified position
-  def []: (Integer index) -> untyped
+  def []: (untyped index_or_range) -> untyped
+        | (Integer start, Integer length) -> untyped
 
   def &: (Array other) -> self
 
@@ -95,6 +96,7 @@ class Array
 
   # Get subarray
   def slice: (untyped index_or_range) -> untyped
+           | (Integer start, Integer length) -> untyped
 
   # Return array with duplicates removed
   def uniq: () -> self
