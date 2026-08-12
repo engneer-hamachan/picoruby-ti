@@ -312,6 +312,14 @@ make_signature_content(
     if (define_arg)
       length += define_arg->byte_length;
 
+    if (define_info->define_arg_kinds[index] == TI_DEFINE_ARG_REST)
+      length++;
+    else if (
+      define_info->define_arg_kinds[index] == TI_DEFINE_ARG_KEYWORD_REST
+    ) {
+      length += 2;
+    }
+
     if (index > 0)
       length += 2;
   }
@@ -345,6 +353,15 @@ make_signature_content(
 
       if (!define_arg_bytes)
         return NULL;
+
+      if (define_info->define_arg_kinds[index] == TI_DEFINE_ARG_REST) {
+        detail[offset++] = '*';
+      } else if (
+        define_info->define_arg_kinds[index] == TI_DEFINE_ARG_KEYWORD_REST
+      ) {
+        detail[offset++] = '*';
+        detail[offset++] = '*';
+      }
 
       memcpy(detail + offset, define_arg_bytes, define_arg->byte_length);
       offset += define_arg->byte_length;

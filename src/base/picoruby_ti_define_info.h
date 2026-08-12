@@ -6,6 +6,12 @@
 #define TI_DEFINE_INFO_CAPACITY 64
 #define TI_DEFINE_ARG_CAPACITY 8
 
+typedef enum {
+  TI_DEFINE_ARG_REQUIRED,
+  TI_DEFINE_ARG_REST,
+  TI_DEFINE_ARG_KEYWORD_REST,
+} TiDefineArgKind;
+
 typedef struct {
   uint16_t name_id;
   uint16_t owner_class_name_id;
@@ -14,6 +20,7 @@ typedef struct {
   uint8_t define_arg_count;
   uint8_t is_class;
   uint16_t define_arg_name_ids[TI_DEFINE_ARG_CAPACITY];
+  TiDefineArgKind define_arg_kinds[TI_DEFINE_ARG_CAPACITY];
 } TiDefineInfo;
 
 int ti_initialize_define_infos(void);

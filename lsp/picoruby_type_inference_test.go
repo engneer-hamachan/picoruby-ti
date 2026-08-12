@@ -54,7 +54,8 @@ func TestMakeMethodsByPicoRubyReturnsInstanceAndStaticMethods(test *testing.T) {
 
 func TestMakeMethodsByPicoRubyReturnsDefinedMethodSignature(test *testing.T) {
 	typeInference := &picorubyTypeInference{}
-	rubyCode := "class UserClass\n  def answer(value) = 1\nend"
+	rubyCode :=
+		"class UserClass\n  def answer(value, *values, **options) = 1\nend"
 	methods, classFound :=
 		typeInference.makeMethodsByPicoRuby(rubyCode, "UserClass")
 
@@ -64,11 +65,12 @@ func TestMakeMethodsByPicoRubyReturnsDefinedMethodSignature(test *testing.T) {
 
 	for _, method := range methods {
 		if method.Name == "answer" {
-			if method.Signature != "answer(value) -> Integer" {
+			if method.Signature !=
+				"answer(value, *values, **options) -> Integer" {
 				test.Fatalf(
 					"answer signature = %q, want %q",
 					method.Signature,
-					"answer(value) -> Integer",
+					"answer(value, *values, **options) -> Integer",
 				)
 			}
 			if method.Static {
