@@ -6,6 +6,35 @@
 #include <stdint.h>
 
 static void
+append_define_arg(
+  TiContext *context,
+  TiDefineInfo *define_info,
+  pm_constant_id_t constant_id,
+  TiDefineArgKind define_arg_kind
+) {
+
+  if (
+    !define_info ||
+    !constant_id ||
+    define_info->define_arg_count >= TI_DEFINE_ARG_CAPACITY
+  ) {
+
+    return;
+  }
+
+  uint16_t name_id;
+
+  if (!ti_convert_constant_id(context, constant_id, &name_id)) {
+    context->failed = 1;
+    return;
+  }
+
+  uint8_t index = define_info->define_arg_count++;
+  define_info->define_arg_name_ids[index] = name_id;
+  define_info->define_arg_kinds[index] = define_arg_kind;
+}
+
+static void
 set_define_args(
   TiContext *context,
   TiDefineInfo *define_info,
@@ -15,31 +44,46 @@ set_define_args(
   if (!define_info || !parameters)
     return;
 
-  size_t required_count = parameters->requireds.size;
+  define_info->define_arg_count = 0;
 
-  if (required_count > TI_DEFINE_ARG_CAPACITY)
-    required_count = TI_DEFINE_ARG_CAPACITY;
-
-  define_info->define_arg_count = (uint8_t)required_count;
-
-  for (size_t index = 0; index < required_count; index++) {
+  for (size_t index = 0; index < parameters->requireds.size; index++) {
     const pm_node_t *parameter = parameters->requireds.nodes[index];
 
     if (PM_NODE_TYPE(parameter) != PM_REQUIRED_PARAMETER_NODE)
       continue;
 
-    pm_constant_id_t constant_id =
-      ((const pm_required_parameter_node_t *)parameter)->name;
+    append_define_arg(
+      context,
+      define_info,
+      ((const pm_required_parameter_node_t *)parameter)->name,
+      TI_DEFINE_ARG_REQUIRED
+    );
+  }
 
-    uint16_t name_id;
+  if (
+    parameters->rest &&
+    PM_NODE_TYPE(parameters->rest) == PM_REST_PARAMETER_NODE
+  ) {
 
-    if (!ti_convert_constant_id(context, constant_id, &name_id)) {
-      context->failed = 1;
+    append_define_arg(
+      context,
+      define_info,
+      ((const pm_rest_parameter_node_t *)parameters->rest)->name,
+      TI_DEFINE_ARG_REST
+    );
+  }
 
-      return;
-    }
+  if (
+    parameters->keyword_rest &&
+    PM_NODE_TYPE(parameters->keyword_rest) == PM_KEYWORD_REST_PARAMETER_NODE
+  ) {
 
-    define_info->define_arg_name_ids[index] = name_id;
+    append_define_arg(
+      context,
+      define_info,
+      ((const pm_keyword_rest_parameter_node_t *)parameters->keyword_rest)->name,
+      TI_DEFINE_ARG_KEYWORD_REST
+    );
   }
 }
 

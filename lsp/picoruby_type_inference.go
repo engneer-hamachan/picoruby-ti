@@ -230,11 +230,20 @@ picoruby_ti_make_defined_method_signature(
     if (!argument_name)
       continue;
 
+    const char *argument_prefix = "";
+    if (define_info->define_arg_kinds[index] == TI_DEFINE_ARG_REST)
+      argument_prefix = "*";
+    else if (
+      define_info->define_arg_kinds[index] == TI_DEFINE_ARG_KEYWORD_REST
+    )
+      argument_prefix = "**";
+
     int written_byte_length = snprintf(
       signature + signature_byte_length,
       256 - signature_byte_length,
-      "%s%.*s",
+      "%s%s%.*s",
       index == 0 ? "" : ", ",
+      argument_prefix,
       argument_name->byte_length,
       ti_get_name_bytes(argument_name)
     );

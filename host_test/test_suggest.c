@@ -80,6 +80,16 @@ test_receiverless_top_level_method_suggestion(void) {
 }
 
 static void
+test_rest_and_keyword_rest_parameter_suggestion(void) {
+  TiSuggestionList suggestions =
+    suggest_source("def test(x, *a, **b) = 1\nte");
+  const TiSuggestion *suggestion = find_suggestion(&suggestions, "test");
+
+  assert(suggestion);
+  assert(strcmp(suggestion->detail, "test(x, *a, **b) -> Integer") == 0);
+}
+
+static void
 test_receiverless_user_class_suggestion(void) {
   TiSuggestionList suggestions = suggest_source("class User\n"
                                                 "  def hoge = 1\n"
@@ -247,6 +257,7 @@ main(void) {
   test_unknown_receiver();
   test_receiverless_suggestion();
   test_receiverless_top_level_method_suggestion();
+  test_rest_and_keyword_rest_parameter_suggestion();
   test_receiverless_user_class_suggestion();
   test_receiverless_builtin_class_suggestion();
   test_receiverless_defined_class_suggestion();
