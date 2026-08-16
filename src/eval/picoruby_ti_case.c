@@ -3,21 +3,6 @@
 #include "picoruby_ti_eval.h"
 #include "picoruby_ti_t.h"
 
-static uint16_t
-eval_statements_or_nil(
-  TiContext *context,
-  const pm_statements_node_t *statements,
-  int depth
-) {
-
-  uint16_t t_node_index = ti_eval_statements(context, statements, depth);
-
-  if (t_node_index == 0)
-    t_node_index = ti_new_t(TI_CLASS_NIL, 0, 0);
-
-  return t_node_index;
-}
-
 uint16_t
 ti_eval_case(TiContext *context, const pm_case_node_t *case_node, int depth) {
   ti_eval_node(context, case_node->predicate);
@@ -43,7 +28,7 @@ ti_eval_case(TiContext *context, const pm_case_node_t *case_node, int depth) {
     }
 
     uint16_t when_t_node_index =
-      eval_statements_or_nil(
+      ti_eval_statements_or_nil(
         context,
         when_node->statements,
         depth + 1
@@ -57,7 +42,7 @@ ti_eval_case(TiContext *context, const pm_case_node_t *case_node, int depth) {
 
   if (case_node->else_clause) {
     else_t_node_index =
-      eval_statements_or_nil(
+      ti_eval_statements_or_nil(
         context,
         case_node->else_clause->statements,
         depth + 1
@@ -92,7 +77,7 @@ uint16_t ti_eval_case_match(
     ti_eval_node(context, in_node->pattern);
 
     uint16_t in_t_node_index =
-      eval_statements_or_nil(
+      ti_eval_statements_or_nil(
         context,
         in_node->statements,
         depth + 1
@@ -104,7 +89,7 @@ uint16_t ti_eval_case_match(
 
   if (case_match_node->else_clause) {
     uint16_t else_t_node_index =
-      eval_statements_or_nil(
+      ti_eval_statements_or_nil(
         context,
         case_match_node->else_clause->statements,
         depth + 1

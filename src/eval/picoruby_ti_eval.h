@@ -16,6 +16,11 @@ uint16_t ti_eval_statements(
   const pm_statements_node_t *statements,
   int depth
 );
+uint16_t ti_eval_statements_or_nil(
+  TiContext *context,
+  const pm_statements_node_t *statements,
+  int depth
+);
 uint16_t
 ti_eval_expression(TiContext *context, const pm_node_t *node, int depth);
 void ti_eval_node(TiContext *context, const pm_node_t *node);
