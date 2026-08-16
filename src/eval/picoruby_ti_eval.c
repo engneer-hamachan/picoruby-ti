@@ -1,5 +1,6 @@
 #include "picoruby_ti_eval.h"
 #include "picoruby_ti_arena.h"
+#include "picoruby_ti_begin.h"
 #include "picoruby_ti_bind.h"
 #include "picoruby_ti_builtin.h"
 #include "picoruby_ti_case.h"
@@ -8,6 +9,7 @@
 #include "picoruby_ti_define_info.h"
 #include "picoruby_ti_eval_handlers.h"
 #include "picoruby_ti_ifunless.h"
+#include "picoruby_ti_loop.h"
 #include "picoruby_ti_method_evaluator.h"
 #include "picoruby_ti_name.h"
 #include "picoruby_ti_return.h"
@@ -50,6 +52,22 @@ ti_eval_statements(
       ti_eval_expression(context, statements->body.nodes[index], depth + 1);
 
   return last_evaluated_t_node_index;
+}
+
+uint16_t
+ti_eval_statements_or_nil(
+  TiContext *context,
+  const pm_statements_node_t *statements,
+  int depth
+) {
+
+  uint16_t result_t_node_index =
+    ti_eval_statements(context, statements, depth);
+
+  if (result_t_node_index == 0)
+    return new_builtin_t(TI_CLASS_NIL);
+
+  return result_t_node_index;
 }
 
 uint16_t
@@ -157,6 +175,24 @@ ti_eval_expression(TiContext *context, const pm_node_t *node, int depth) {
   case PM_IF_NODE:
     return ti_eval_ifunless(context, (const pm_if_node_t *)node, depth);
 
+  case PM_UNLESS_NODE:
+    return ti_eval_unless(context, (const pm_unless_node_t *)node, depth);
+
+  case PM_WHILE_NODE:
+    return ti_eval_while(context, (const pm_while_node_t *)node, depth);
+
+  case PM_UNTIL_NODE:
+    return ti_eval_until(context, (const pm_until_node_t *)node, depth);
+
+  case PM_FOR_NODE:
+    return ti_eval_for(context, (const pm_for_node_t *)node, depth);
+
+  case PM_BEGIN_NODE:
+    return ti_eval_begin(context, (const pm_begin_node_t *)node, depth);
+
+  case PM_RESCUE_NODE:
+    return ti_eval_rescue(context, (const pm_rescue_node_t *)node, depth);
+
   case PM_CASE_NODE:
     return ti_eval_case(context, (const pm_case_node_t *)node, depth);
 
@@ -171,6 +207,8 @@ ti_eval_expression(TiContext *context, const pm_node_t *node, int depth) {
     return ti_eval_return(context, (const pm_return_node_t *)node, depth);
 
   default:
+    ti_eval_node(context, node);
+
     return 0;
   }
 }

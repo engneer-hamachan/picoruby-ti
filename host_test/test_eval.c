@@ -528,6 +528,180 @@ test_unknown_return(void) {
 }
 
 static void
+test_while_body_binding(void) {
+  TiSuggestionList suggestions = suggest_source("def run\n"
+                                                "  while true\n"
+                                                "    assigned = 1\n"
+                                                "  end\n"
+                                                "  assigned\n"
+                                                "end\n"
+                                                "run().");
+  assert(has_suggestion(&suggestions, "abs"));
+}
+
+static void
+test_while_return(void) {
+  const char *source = "result = while true\n"
+                       "end\n"
+                       "result\n";
+  const char *target = strrchr(source, 'r');
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(strcmp(hover_info.type_name, "NilClass") == 0);
+}
+
+static void
+test_until_body_binding(void) {
+  TiSuggestionList suggestions = suggest_source("def run\n"
+                                                "  until false\n"
+                                                "    assigned = \"x\"\n"
+                                                "  end\n"
+                                                "  assigned\n"
+                                                "end\n"
+                                                "run().");
+  assert(has_suggestion(&suggestions, "bytes"));
+}
+
+static void
+test_for_return(void) {
+  const char *source = "result = for item in [1]\n"
+                       "end\n"
+                       "result\n";
+  const char *target = strrchr(source, 'r');
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(strcmp(hover_info.type_name, "Array<Integer>") == 0);
+}
+
+static void
+test_for_body_binding(void) {
+  TiSuggestionList suggestions = suggest_source("def run\n"
+                                                "  for item in [1]\n"
+                                                "    assigned = 1\n"
+                                                "  end\n"
+                                                "  assigned\n"
+                                                "end\n"
+                                                "run().");
+  assert(has_suggestion(&suggestions, "abs"));
+}
+
+static void
+test_begin_rescue_return(void) {
+  const char *source = "result = begin\n"
+                       "  1\n"
+                       "rescue\n"
+                       "  \"x\"\n"
+                       "end\n"
+                       "result\n";
+  const char *target = strrchr(source, 'r');
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(strcmp(hover_info.type_name, "Union<Integer String>") == 0);
+}
+
+static void
+test_begin_else_return(void) {
+  const char *source = "result = begin\n"
+                       "  1\n"
+                       "rescue\n"
+                       "  \"x\"\n"
+                       "else\n"
+                       "  :done\n"
+                       "end\n"
+                       "result\n";
+  const char *target = strrchr(source, 'r');
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(strcmp(hover_info.type_name, "Union<Symbol String>") == 0);
+}
+
+static void
+test_rescue_body_binding(void) {
+  TiSuggestionList suggestions = suggest_source("def run\n"
+                                                "  begin\n"
+                                                "    nil\n"
+                                                "  rescue\n"
+                                                "    assigned = 1\n"
+                                                "  end\n"
+                                                "  assigned\n"
+                                                "end\n"
+                                                "run().");
+  assert(has_suggestion(&suggestions, "abs"));
+}
+
+static void
+test_ensure_body_binding(void) {
+  TiSuggestionList suggestions = suggest_source("def run\n"
+                                                "  begin\n"
+                                                "    nil\n"
+                                                "  ensure\n"
+                                                "    assigned = \"x\"\n"
+                                                "  end\n"
+                                                "  assigned\n"
+                                                "end\n"
+                                                "run().");
+  assert(has_suggestion(&suggestions, "bytes"));
+}
+
+static void
+test_unless_return(void) {
+  const char *source = "result = unless value\n"
+                       "  1\n"
+                       "else\n"
+                       "  \"x\"\n"
+                       "end\n"
+                       "result\n";
+  const char *target = strrchr(source, 'r');
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(strcmp(hover_info.type_name, "Union<Integer String>") == 0);
+}
+
+static void
+test_unless_without_else_return(void) {
+  const char *source = "result = unless value\n"
+                       "  1\n"
+                       "end\n"
+                       "result\n";
+  const char *target = strrchr(source, 'r');
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(strcmp(hover_info.type_name, "Union<Integer NilClass>") == 0);
+}
+
+static void
+test_unhandled_node_is_traversed(void) {
+  TiDiagnosticList diagnostics = diagnose_source("def run\n"
+                                                 "  true && \"x\".tr(1, \"a\")\n"
+                                                 "end");
+  assert(diagnostics.count == 1);
+}
+
+static void
+test_nested_definition_in_definition(void) {
+  TiSuggestionList suggestions = suggest_source("def outer\n"
+                                                "  def inner\n"
+                                                "    1\n"
+                                                "  end\n"
+                                                "  inner()\n"
+                                                "end\n"
+                                                "outer().");
+  assert(has_suggestion(&suggestions, "abs"));
+}
+
+static void
 test_binding_overflow(void) {
   size_t capacity = 24000;
   char *source = malloc(capacity);
@@ -597,6 +771,19 @@ main(void) {
   test_union_binding();
   test_union_capacity();
   test_unknown_return();
+  test_while_body_binding();
+  test_while_return();
+  test_until_body_binding();
+  test_for_return();
+  test_for_body_binding();
+  test_begin_rescue_return();
+  test_begin_else_return();
+  test_rescue_body_binding();
+  test_ensure_body_binding();
+  test_unless_return();
+  test_unless_without_else_return();
+  test_unhandled_node_is_traversed();
+  test_nested_definition_in_definition();
   test_binding_overflow();
 
   return 0;
