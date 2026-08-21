@@ -1,12 +1,10 @@
 #ifndef PICORUBY_TI_NAME_H
 #define PICORUBY_TI_NAME_H
 
+#include "picoruby_ti_configuration.h"
 #include <prism.h>
 #include <stddef.h>
 #include <stdint.h>
-
-#define TI_NAME_CAPACITY 512
-#define TI_NAME_BYTE_CAPACITY 4096
 
 typedef struct {
   uint16_t byte_offset;

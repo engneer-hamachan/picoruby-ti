@@ -1,11 +1,11 @@
 #ifndef PICORUBY_TI_T_H
 #define PICORUBY_TI_T_H
 
+#include "picoruby_ti_configuration.h"
 #include <stdint.h>
 
 #define TI_T_FLAG_DEFINED_CLASS 1U
 #define TI_T_FLAG_STATIC 2U
-#define TI_T_CAPACITY 500
 #define TI_UNION_CAPACITY 5
 
 typedef struct {

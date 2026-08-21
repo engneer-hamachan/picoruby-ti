@@ -1,10 +1,8 @@
 #ifndef PICORUBY_TI_DEFINE_INFO_H
 #define PICORUBY_TI_DEFINE_INFO_H
 
+#include "picoruby_ti_configuration.h"
 #include <stdint.h>
-
-#define TI_DEFINE_INFO_CAPACITY 64
-#define TI_DEFINE_ARG_CAPACITY 8
 
 typedef enum {
   TI_DEFINE_ARG_REQUIRED,

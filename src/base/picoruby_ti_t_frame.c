@@ -5,36 +5,27 @@
 #include <stddef.h>
 #include <string.h>
 
-#define TI_T_FRAME_CAPACITY 512
-
 typedef enum {
   TI_T_FRAME_VALUE,
   TI_T_FRAME_METHOD,
   TI_T_FRAME_INSTANCE_VARIABLE,
 } TiTFrameEntryKind;
 
-typedef struct {
-  uint16_t name_id;
-  uint16_t t_node_index;
-  uint8_t object_class_id;
-  uint8_t entry_kind;
-} t_frame_entry;
-
-static t_frame_entry *t_frame;
+static TiTFrameEntry *t_frame;
 
 int
 ti_initialize_t_frame(void) {
-  t_frame = ti_allocate_from_arena(sizeof(t_frame_entry) * TI_T_FRAME_CAPACITY);
+  t_frame = ti_allocate_from_arena(sizeof(TiTFrameEntry) * TI_T_FRAME_CAPACITY);
 
   if (!t_frame)
     return 0;
 
-  memset(t_frame, 0, sizeof(t_frame_entry) * TI_T_FRAME_CAPACITY);
+  memset(t_frame, 0, sizeof(TiTFrameEntry) * TI_T_FRAME_CAPACITY);
 
   return 1;
 }
 
-static t_frame_entry *
+static TiTFrameEntry *
 find_t_frame_entry(
   uint8_t object_class_id,
   uint16_t name_id,
@@ -48,7 +39,7 @@ find_t_frame_entry(
   for (int checked_slot_count = 0; checked_slot_count < TI_T_FRAME_CAPACITY;
        checked_slot_count++) {
 
-    t_frame_entry *entry = &t_frame[index];
+    TiTFrameEntry *entry = &t_frame[index];
 
     if (
       entry->name_id == 0 ||
@@ -77,7 +68,7 @@ set_t_frame_entry_t(
   if (name_id == 0 || t_node_index == 0)
     return 1;
 
-  t_frame_entry *entry =
+  TiTFrameEntry *entry =
     find_t_frame_entry(object_class_id, name_id, entry_kind);
 
   if (!entry)
@@ -113,7 +104,7 @@ get_t_frame_entry_t(
   if (name_id == 0)
     return 0;
 
-  t_frame_entry *entry =
+  TiTFrameEntry *entry =
     find_t_frame_entry(object_class_id, name_id, entry_kind);
 
   if (!entry || entry->name_id != name_id)
@@ -203,7 +194,7 @@ ti_find_instance_variable_and_advance_slot(
     slot_index++
   ) {
 
-    const t_frame_entry *entry = &t_frame[slot_index];
+    const TiTFrameEntry *entry = &t_frame[slot_index];
 
     if (
       entry->name_id == 0 ||
