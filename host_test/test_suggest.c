@@ -250,6 +250,86 @@ test_nested_class_methods_have_separate_owners(void) {
   assert(!find_suggestion(&suggestions, "inner_method"));
 }
 
+static void
+test_instance_variable_suggestion(void) {
+  TiSuggestionList suggestions = suggest_source("class Holder\n"
+                                                "  def initialize\n"
+                                                "    @name = \"x\"\n"
+                                                "    @count = 1\n"
+                                                "  end\n"
+                                                "  def run\n"
+                                                "    @na");
+  const TiSuggestion *suggestion = find_suggestion(&suggestions, "name");
+
+  assert(suggestion);
+  assert(strcmp(suggestion->detail, "name: String") == 0);
+  assert(!find_suggestion(&suggestions, "count"));
+}
+
+static void
+test_instance_variable_suggestion_is_scoped_to_class(void) {
+  TiSuggestionList suggestions = suggest_source("class A\n"
+                                                "  def initialize\n"
+                                                "    @only_in_a = 1\n"
+                                                "  end\n"
+                                                "end\n"
+                                                "class B\n"
+                                                "  def initialize\n"
+                                                "    @only_in_b = 1\n"
+                                                "  end\n"
+                                                "  def run\n"
+                                                "    @");
+
+  assert(find_suggestion(&suggestions, "only_in_b"));
+  assert(!find_suggestion(&suggestions, "only_in_a"));
+}
+
+static void
+test_attribute_accessor_suggestion(void) {
+  TiSuggestionList suggestions = suggest_source("class Holder\n"
+                                                "  attr_accessor :name\n"
+                                                "  def initialize\n"
+                                                "    @name = \"x\"\n"
+                                                "  end\n"
+                                                "end\n"
+                                                "holder = Holder.new\n"
+                                                "holder.na");
+  const TiSuggestion *reader = find_suggestion(&suggestions, "name");
+  const TiSuggestion *writer = find_suggestion(&suggestions, "name=");
+
+  assert(reader);
+  assert(strcmp(reader->detail, "name() -> String") == 0);
+  assert(writer);
+  assert(strcmp(writer->detail, "name=(name) -> String") == 0);
+}
+
+static void
+test_attribute_reader_has_no_writer_suggestion(void) {
+  TiSuggestionList suggestions = suggest_source("class Holder\n"
+                                                "  attr_reader :name\n"
+                                                "  def initialize\n"
+                                                "    @name = \"x\"\n"
+                                                "  end\n"
+                                                "end\n"
+                                                "holder = Holder.new\n"
+                                                "holder.");
+
+  assert(find_suggestion(&suggestions, "name"));
+  assert(!find_suggestion(&suggestions, "name="));
+}
+
+static void
+test_self_suggestion(void) {
+  TiSuggestionList suggestions = suggest_source("class Holder\n"
+                                                "  def name = \"x\"\n"
+                                                "  def run\n"
+                                                "    self.na");
+  const TiSuggestion *suggestion = find_suggestion(&suggestions, "name");
+
+  assert(suggestion);
+  assert(strcmp(suggestion->detail, "name() -> String") == 0);
+}
+
 int
 main(void) {
   test_string_suggestion();
@@ -270,6 +350,11 @@ main(void) {
   test_user_class_only_suggests_its_methods();
   test_same_method_name_in_different_classes();
   test_nested_class_methods_have_separate_owners();
+  test_instance_variable_suggestion();
+  test_instance_variable_suggestion_is_scoped_to_class();
+  test_attribute_accessor_suggestion();
+  test_attribute_reader_has_no_writer_suggestion();
+  test_self_suggestion();
 
   return 0;
 }

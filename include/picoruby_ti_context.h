@@ -22,8 +22,18 @@ int ti_convert_constant_id(
   pm_constant_id_t constant_id,
   uint16_t *name_id
 );
+int ti_convert_instance_variable_attribute_name_id(
+  TiContext *context,
+  pm_constant_id_t constant_id,
+  uint16_t *attribute_name_id
+);
 const pm_constant_t *
 ti_get_constant(const TiContext *context, pm_constant_id_t constant_id);
 uint16_t ti_calculate_row(const TiContext *context, const uint8_t *location);
+void ti_set_context_class_at_cursor(
+  TiContext *context,
+  const pm_node_t *root,
+  int cursor_byte_offset
+);
 
 #endif

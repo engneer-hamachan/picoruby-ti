@@ -8,6 +8,10 @@ uint16_t ti_handle_identifier(
   TiContext *context,
   pm_constant_id_t constant_id
 );
+uint16_t ti_handle_instance_variable(
+  TiContext *context,
+  pm_constant_id_t constant_id
+);
 uint16_t ti_handle_const_evaluation(
   TiContext *context,
   const pm_constant_read_node_t *constant_read

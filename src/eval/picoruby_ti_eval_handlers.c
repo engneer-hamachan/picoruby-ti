@@ -15,6 +15,27 @@ ti_handle_identifier(TiContext *context, pm_constant_id_t constant_id) {
 }
 
 uint16_t
+ti_handle_instance_variable(TiContext *context, pm_constant_id_t constant_id) {
+  uint16_t attribute_name_id;
+
+  if (
+    !ti_convert_instance_variable_attribute_name_id(
+      context,
+      constant_id,
+      &attribute_name_id
+    )
+  ) {
+
+    return 0;
+  }
+
+  return ti_get_instance_variable_t(
+    context->current_class_id,
+    attribute_name_id
+  );
+}
+
+uint16_t
 ti_handle_const_evaluation(
   TiContext *context,
   const pm_constant_read_node_t *constant_read

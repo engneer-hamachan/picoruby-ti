@@ -737,6 +737,100 @@ test_binding_overflow(void) {
   free(source);
 }
 
+static void
+test_instance_variable_type_at_cursor(void) {
+  const char *source = "class Holder\n"
+                       "  def initialize\n"
+                       "    @name = \"x\"\n"
+                       "  end\n"
+                       "end\n";
+  const char *target = strstr(source, "@name");
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(strcmp(hover_info.variable_name, "@name") == 0);
+  assert(strcmp(hover_info.type_name, "String") == 0);
+}
+
+static void
+test_instance_variable_assignments_are_unioned(void) {
+  const char *source = "class Holder\n"
+                       "  def initialize\n"
+                       "    @value = 1\n"
+                       "  end\n"
+                       "  def reset\n"
+                       "    @value = \"x\"\n"
+                       "  end\n"
+                       "end\n";
+  const char *target = strstr(source, "@value = \"x\"");
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(strcmp(hover_info.type_name, "Union<Integer String>") == 0);
+}
+
+static void
+test_instance_variable_is_scoped_to_class(void) {
+  const char *source = "class A\n"
+                       "  def initialize\n"
+                       "    @value = 1\n"
+                       "  end\n"
+                       "end\n"
+                       "class B\n"
+                       "  def initialize\n"
+                       "    @value = \"x\"\n"
+                       "  end\n"
+                       "end\n";
+  const char *target = strstr(source, "@value = \"x\"");
+  TiHoverInfo hover_info;
+
+  assert(target);
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(strcmp(hover_info.type_name, "String") == 0);
+}
+
+static void
+test_attribute_reader_type_at_cursor(void) {
+  const char *source = "class Holder\n"
+                       "  attr_accessor :name\n"
+                       "  def initialize\n"
+                       "    @name = \"x\"\n"
+                       "  end\n"
+                       "end\n"
+                       "holder = Holder.new\n"
+                       "holder.name\n";
+  const char *target = strstr(source, "holder.name");
+  TiHoverInfo hover_info;
+
+  assert(target);
+  target = strstr(target, "name");
+
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(hover_info.is_method);
+  assert(strcmp(hover_info.method_signature, "name() -> String") == 0);
+}
+
+static void
+test_self_method_type_at_cursor(void) {
+  const char *source = "class Holder\n"
+                       "  def name = \"x\"\n"
+                       "  def run\n"
+                       "    self.name\n"
+                       "  end\n"
+                       "end\n";
+  const char *target = strstr(source, "self.name");
+  TiHoverInfo hover_info;
+
+  assert(target);
+  target = strstr(target, "name");
+
+  assert(find_hover(source, (int)(target - source), &hover_info));
+  assert(hover_info.is_method);
+  assert(strcmp(hover_info.method_signature, "name() -> String") == 0);
+}
+
 int
 main(void) {
   test_builtin_argument_type_diagnostic();
@@ -751,6 +845,11 @@ main(void) {
   test_binding_lookup();
   test_method_chain();
   test_instance_variable();
+  test_instance_variable_type_at_cursor();
+  test_instance_variable_assignments_are_unioned();
+  test_instance_variable_is_scoped_to_class();
+  test_attribute_reader_type_at_cursor();
+  test_self_method_type_at_cursor();
   test_definition_return();
   test_definition_binding_return();
   test_if_return();

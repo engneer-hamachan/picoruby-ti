@@ -14,6 +14,7 @@ typedef struct {
   pm_constant_id_t name;
   pm_location_t location;
   const pm_call_node_t *call;
+  int is_instance_variable;
 } TiHoverSearch;
 
 static bool
@@ -94,6 +95,10 @@ find_hover_target_on_visit(const pm_node_t *node, void *data) {
   search->location = location;
   search->call = NULL;
 
+  search->is_instance_variable =
+    PM_NODE_TYPE(node) == PM_INSTANCE_VARIABLE_READ_NODE ||
+    PM_NODE_TYPE(node) == PM_INSTANCE_VARIABLE_WRITE_NODE;
+
   if (PM_NODE_TYPE(node) == PM_CALL_NODE)
     search->call = (const pm_call_node_t *)node;
 
@@ -158,8 +163,10 @@ ti_find_hover_at_cursor(
     .cursor_byte_offset = cursor_byte_offset,
   };
 
-  if (!ti_did_arena_overflow())
+  if (!ti_did_arena_overflow()) {
+    ti_set_context_class_at_cursor(&context, root, cursor_byte_offset);
     pm_visit_node(root, find_hover_target_on_visit, &search);
+  }
 
   if (search.call) {
     TiSuggestionList suggestions;
@@ -203,15 +210,39 @@ ti_find_hover_at_cursor(
     }
   }
 
-  uint16_t name_id;
-  if (!search.call && search.name != 0 &&
-      ti_convert_constant_id(&context, search.name, &name_id)) {
+  uint16_t t_node_index = 0;
+
+  if (!search.call && search.name != 0) {
+    if (search.is_instance_variable) {
+      uint16_t attribute_name_id;
+
+      if (
+        ti_convert_instance_variable_attribute_name_id(
+          &context,
+          search.name,
+          &attribute_name_id
+        )
+      ) {
+
+        t_node_index =
+          ti_get_instance_variable_t(
+            context.current_class_id,
+            attribute_name_id
+          );
+      }
+    } else {
+      uint16_t name_id;
+
+      if (ti_convert_constant_id(&context, search.name, &name_id))
+        t_node_index = ti_get_value_t(name_id);
+    }
+  }
+
+  if (t_node_index != 0) {
     const pm_constant_t *constant = ti_get_constant(&context, search.name);
-    uint16_t t_node_index = ti_get_value_t(name_id);
 
     if (
       constant &&
-      t_node_index != 0 &&
       ti_type_to_string(
         t_node_index,
         out->type_name,

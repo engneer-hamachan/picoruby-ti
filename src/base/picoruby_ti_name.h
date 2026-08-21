@@ -2,6 +2,7 @@
 #define PICORUBY_TI_NAME_H
 
 #include <prism.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #define TI_NAME_CAPACITY 512
@@ -13,6 +14,13 @@ typedef struct {
 } TiName;
 
 int ti_initialize_names(void);
+int ti_intern_concatenated_bytes(
+  const uint8_t *first_bytes,
+  size_t first_byte_length,
+  const uint8_t *second_bytes,
+  size_t second_byte_length,
+  uint16_t *name_id
+);
 int ti_intern_constant(
   const pm_parser_t *parser,
   pm_constant_id_t constant_id,
