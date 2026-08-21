@@ -1,0 +1,40 @@
+#ifndef PICORUBY_TI_CONFIGURATION_H
+#define PICORUBY_TI_CONFIGURATION_H
+
+#include <stddef.h>
+
+#define TI_ARENA_ALIGNMENT_BYTE_SIZE 8U
+
+#define TI_ARENA_ALIGNED_BYTE_SIZE(byte_length) \
+  (((byte_length) + (TI_ARENA_ALIGNMENT_BYTE_SIZE - 1U)) & \
+   ~(size_t)(TI_ARENA_ALIGNMENT_BYTE_SIZE - 1U))
+
+#ifndef TI_ARENA_SIZE
+#define TI_ARENA_SIZE (16 * 1024)
+#endif
+
+#ifndef TI_T_CAPACITY
+#define TI_T_CAPACITY 500
+#endif
+
+#ifndef TI_NAME_CAPACITY
+#define TI_NAME_CAPACITY 512
+#endif
+
+#ifndef TI_NAME_BYTE_CAPACITY
+#define TI_NAME_BYTE_CAPACITY 4096
+#endif
+
+#ifndef TI_T_FRAME_CAPACITY
+#define TI_T_FRAME_CAPACITY 512
+#endif
+
+#ifndef TI_DEFINE_INFO_CAPACITY
+#define TI_DEFINE_INFO_CAPACITY 64
+#endif
+
+#ifndef TI_DEFINE_ARG_CAPACITY
+#define TI_DEFINE_ARG_CAPACITY 8
+#endif
+
+#endif

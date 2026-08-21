@@ -1,9 +1,8 @@
 #ifndef PICORUBY_TI_ARENA_H
 #define PICORUBY_TI_ARENA_H
 
+#include "picoruby_ti_configuration.h"
 #include <stddef.h>
-
-#define TI_ARENA_SIZE (16 * 1024)
 
 void ti_reset_arena(void);
 void *ti_allocate_from_arena(size_t size);

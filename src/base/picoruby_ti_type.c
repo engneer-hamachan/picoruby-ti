@@ -53,7 +53,7 @@ object_class_to_string(
   for (int index = 0; index < ti_get_define_info_count(); index++) {
     TiDefineInfo *define_info = ti_get_define_info(index);
 
-    if (!define_info || !define_info->is_class)
+    if (!define_info->is_class)
       continue;
 
     if (current_user_class_index++ != user_class_index)

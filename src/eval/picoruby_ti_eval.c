@@ -1,5 +1,6 @@
 #include "picoruby_ti_eval.h"
 #include "picoruby_ti_arena.h"
+#include "picoruby_ti_attribute.h"
 #include "picoruby_ti_begin.h"
 #include "picoruby_ti_bind.h"
 #include "picoruby_ti_builtin.h"
@@ -13,6 +14,7 @@
 #include "picoruby_ti_method_evaluator.h"
 #include "picoruby_ti_name.h"
 #include "picoruby_ti_return.h"
+#include "picoruby_ti_self.h"
 #include "picoruby_ti_square_bracket.h"
 #include "picoruby_ti_t.h"
 #include "picoruby_ti_t_frame.h"
@@ -111,7 +113,12 @@ ti_eval_expression(TiContext *context, const pm_node_t *node, int depth) {
   case PM_INSTANCE_VARIABLE_WRITE_NODE: {
     const pm_instance_variable_write_node_t *write =
       (const pm_instance_variable_write_node_t *)node;
-    return ti_bind_scalar_assignment(context, write->name, write->value, depth);
+    return ti_bind_instance_variable_assignment(
+      context,
+      write->name,
+      write->value,
+      depth
+    );
   }
 
   case PM_GLOBAL_VARIABLE_WRITE_NODE: {
@@ -144,7 +151,7 @@ ti_eval_expression(TiContext *context, const pm_node_t *node, int depth) {
     );
 
   case PM_INSTANCE_VARIABLE_READ_NODE:
-    return ti_handle_identifier(
+    return ti_handle_instance_variable(
       context,
       ((const pm_instance_variable_read_node_t *)node)->name
     );
@@ -160,6 +167,9 @@ ti_eval_expression(TiContext *context, const pm_node_t *node, int depth) {
       context,
       (const pm_constant_read_node_t *)node
     );
+
+  case PM_SELF_NODE:
+    return ti_eval_self(context);
 
   case PM_CALL_NODE:
     return ti_eval_method(context, (const pm_call_node_t *)node, depth);
@@ -234,7 +244,7 @@ eval_on_visit(const pm_node_t *node, void *data) {
     const pm_instance_variable_write_node_t *write =
       (const pm_instance_variable_write_node_t *)node;
 
-    ti_bind_scalar_assignment(context, write->name, write->value, 0);
+    ti_bind_instance_variable_assignment(context, write->name, write->value, 0);
 
     return false;
   }
@@ -261,7 +271,9 @@ eval_on_visit(const pm_node_t *node, void *data) {
     return false;
 
   case PM_CALL_NODE:
+    ti_register_attribute_methods(context, (const pm_call_node_t *)node);
     ti_eval_method(context, (const pm_call_node_t *)node, 0);
+
     return false;
 
   case PM_CLASS_NODE: {

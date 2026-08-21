@@ -6,6 +6,7 @@
 #include "picoruby_ti_eval.h"
 #include "picoruby_ti_name.h"
 #include "picoruby_ti_t.h"
+#include "picoruby_ti_t_frame.h"
 #include "picoruby_ti_type.h"
 #include <stddef.h>
 #include <string.h>
@@ -16,12 +17,6 @@ typedef struct {
   size_t target_length;
 } SuggestTargetSearch;
 
-typedef struct {
-  const uint8_t *cursor;
-  const pm_class_node_t *target;
-  size_t target_length;
-} EnclosingClassSearch;
-
 static int
 is_identifier_byte(uint8_t byte) {
   return (byte >= 'a' && byte <= 'z') || (byte >= 'A' && byte <= 'Z') ||
@@ -29,11 +24,10 @@ is_identifier_byte(uint8_t byte) {
          byte == '?';
 }
 
-static int
+static void
 find_suggest_prefix(
   const TiContext *context,
   int cursor_byte_offset,
-  size_t *dot_offset,
   const uint8_t **prefix,
   size_t *prefix_length,
   int *has_receiver
@@ -46,37 +40,12 @@ find_suggest_prefix(
     start--;
 
   *has_receiver = start > 0 && context->source[start - 1] == '.';
-  *dot_offset = start;
 
-  if (*has_receiver)
-    *dot_offset = start - 1;
+  if (!*has_receiver && start > 0 && context->source[start - 1] == '@')
+    start--;
 
   *prefix = context->source + start;
   *prefix_length = cursor - start;
-
-  return 1;
-}
-
-static bool
-find_enclosing_class_on_visit(const pm_node_t *node, void *data) {
-  EnclosingClassSearch *search = data;
-
-  if (PM_NODE_TYPE(node) != PM_CLASS_NODE)
-    return true;
-
-  if (node->location.start > search->cursor ||
-      node->location.end < search->cursor) {
-
-    return true;
-  }
-
-  size_t length = (size_t)(node->location.end - node->location.start);
-  if (!search->target || length < search->target_length) {
-    search->target = (const pm_class_node_t *)node;
-    search->target_length = length;
-  }
-
-  return true;
 }
 
 static bool
@@ -178,20 +147,26 @@ append_builtin_suggestions(
 }
 
 static char *
+copy_bytes_to_arena(const uint8_t *bytes, size_t byte_length) {
+  char *copy = ti_allocate_from_arena(byte_length + 1);
+
+  if (!copy)
+    return NULL;
+
+  memcpy(copy, bytes, byte_length);
+  copy[byte_length] = '\0';
+
+  return copy;
+}
+
+static char *
 copy_name_to_arena(const TiName *name) {
   const uint8_t *bytes = ti_get_name_bytes(name);
 
   if (!bytes)
     return NULL;
 
-  char *copy = ti_allocate_from_arena((size_t)name->byte_length + 1);
-  if (!copy)
-    return NULL;
-
-  memcpy(copy, bytes, name->byte_length);
-  copy[name->byte_length] = '\0';
-
-  return copy;
+  return copy_bytes_to_arena(bytes, name->byte_length);
 }
 
 static void
@@ -259,7 +234,7 @@ append_defined_class_suggestions(
 
     TiDefineInfo *define_info = ti_get_define_info(index);
 
-    if (!define_info || !define_info->is_class)
+    if (!define_info->is_class)
       continue;
 
     const TiName *name = ti_get_name(define_info->name_id);
@@ -283,6 +258,24 @@ append_defined_class_suggestions(
   }
 }
 
+static size_t
+write_type_string_or_untyped(
+  uint16_t t_node_index,
+  char *buffer,
+  size_t capacity
+) {
+
+  size_t type_string_length =
+    (size_t)ti_type_to_string(t_node_index, buffer, capacity);
+
+  if (type_string_length == 0) {
+    memcpy(buffer, "untyped", sizeof("untyped"));
+    type_string_length = sizeof("untyped") - 1;
+  }
+
+  return type_string_length;
+}
+
 static char *
 make_signature_content(
   const TiDefineInfo *define_info,
@@ -292,16 +285,11 @@ make_signature_content(
   char return_type[TI_TYPE_STRING_CAPACITY];
 
   size_t return_type_length =
-    (size_t)ti_type_to_string(
+    write_type_string_or_untyped(
       define_info->return_t_node_index,
       return_type,
       sizeof(return_type)
     );
-
-  if (return_type_length == 0) {
-    memcpy(return_type, "untyped", sizeof("untyped"));
-    return_type_length = sizeof("untyped") - 1;
-  }
 
   size_t length = name->byte_length + 2;
 
@@ -395,7 +383,6 @@ append_define_info_suggestions_for_owner(
     TiDefineInfo *define_info = ti_get_define_info(index);
 
     if (
-      !define_info ||
       define_info->is_class ||
       define_info->owner_class_name_id != class_name_id
     ) {
@@ -448,7 +435,7 @@ append_define_info_suggestions(
   for (int index = 0; index < ti_get_define_info_count(); index++) {
     TiDefineInfo *define_info = ti_get_define_info(index);
 
-    if (!define_info || !define_info->is_class)
+    if (!define_info->is_class)
       continue;
 
     if (current_class_index == user_class_index) {
@@ -467,6 +454,120 @@ append_define_info_suggestions(
   }
 }
 
+static char *
+make_instance_variable_detail(
+  const TiName *attribute_name,
+  uint16_t t_node_index
+) {
+
+  char type_string[TI_TYPE_STRING_CAPACITY];
+
+  size_t type_string_length =
+    write_type_string_or_untyped(
+      t_node_index,
+      type_string,
+      sizeof(type_string)
+    );
+
+  const uint8_t *attribute_name_bytes = ti_get_name_bytes(attribute_name);
+
+  if (!attribute_name_bytes)
+    return NULL;
+
+  size_t attribute_name_byte_length = (size_t)attribute_name->byte_length;
+
+  size_t detail_byte_length =
+    attribute_name_byte_length + sizeof(": ") - 1 + type_string_length;
+
+  char *detail = ti_allocate_from_arena(detail_byte_length + 1);
+
+  if (!detail)
+    return NULL;
+
+  size_t offset = 0;
+
+  memcpy(detail + offset, attribute_name_bytes, attribute_name_byte_length);
+  offset += attribute_name_byte_length;
+
+  memcpy(detail + offset, ": ", sizeof(": ") - 1);
+  offset += sizeof(": ") - 1;
+
+  memcpy(detail + offset, type_string, type_string_length);
+  offset += type_string_length;
+
+  detail[offset] = '\0';
+
+  return detail;
+}
+
+static void
+append_instance_variable_suggestions(
+  TiContext *context,
+  uint8_t object_class_id,
+  const uint8_t *prefix,
+  size_t prefix_length,
+  TiSuggestionList *out
+) {
+
+  int search_slot_index = 0;
+  uint16_t attribute_name_id;
+  uint16_t instance_variable_t_node_index;
+
+  while (
+    ti_find_instance_variable_and_advance_slot(
+      object_class_id,
+      &search_slot_index,
+      &attribute_name_id,
+      &instance_variable_t_node_index
+    )
+  ) {
+
+    const TiName *attribute_name = ti_get_name(attribute_name_id);
+    const uint8_t *attribute_name_bytes = ti_get_name_bytes(attribute_name);
+
+    if (
+      !attribute_name_bytes ||
+      !matches_prefix(
+        attribute_name_bytes,
+        attribute_name->byte_length,
+        prefix,
+        prefix_length
+      )
+    ) {
+
+      continue;
+    }
+
+    char *contents =
+      copy_bytes_to_arena(attribute_name_bytes, attribute_name->byte_length);
+
+    char *detail =
+      make_instance_variable_detail(
+        attribute_name,
+        instance_variable_t_node_index
+      );
+
+    if (!contents || !detail) {
+      context->failed = 1;
+
+      return;
+    }
+
+    if (has_suggestion(out, contents, detail))
+      continue;
+
+    if (out->count >= TI_SUGGESTION_CAPACITY)
+      return;
+
+    TiSuggestion *suggestion = &out->items[out->count++];
+    suggestion->detail = detail;
+    suggestion->document = "";
+    suggestion->contents = contents;
+    suggestion->contents_length = (int)attribute_name->byte_length;
+    suggestion->class_name = NULL;
+  }
+}
+
 int
 ti_collect_suggestions_at_cursor(
   TiContext *context,
@@ -475,24 +576,31 @@ ti_collect_suggestions_at_cursor(
   TiSuggestionList *out
 ) {
 
-  size_t dot_offset;
   const uint8_t *prefix;
   size_t prefix_length;
   int has_receiver;
 
-  if (!find_suggest_prefix(
-        context,
-        cursor_byte_offset,
-        &dot_offset,
-        &prefix,
-        &prefix_length,
-        &has_receiver
-      )) {
-
-    return 0;
-  }
+  find_suggest_prefix(
+    context,
+    cursor_byte_offset,
+    &prefix,
+    &prefix_length,
+    &has_receiver
+  );
 
   if (!has_receiver) {
+    if (prefix_length > 0 && prefix[0] == '@') {
+      append_instance_variable_suggestions(
+        context,
+        context->current_class_id,
+        prefix + 1,
+        prefix_length - 1,
+        out
+      );
+
+      return out->count;
+    }
+
     if (prefix_length > 0 && prefix[0] >= 'A' && prefix[0] <= 'Z') {
       append_builtin_class_suggestions(prefix, prefix_length, out);
       append_defined_class_suggestions(context, prefix, prefix_length, out);
@@ -506,37 +614,14 @@ ti_collect_suggestions_at_cursor(
       out
     );
 
-    EnclosingClassSearch class_search = {
-      .cursor = context->source + cursor_byte_offset,
-      .target = NULL,
-      .target_length = 0,
-    };
-
-    pm_visit_node(root, find_enclosing_class_on_visit, &class_search);
-
-    if (class_search.target) {
-      uint16_t class_name_id;
-
-      if (
-        ti_convert_constant_id(
-          context,
-          class_search.target->name,
-          &class_name_id
-        )
-      ) {
-
-        uint8_t class_id = ti_get_defined_class_id(class_name_id);
-
-        if (class_id != TI_CLASS_NONE) {
-          append_define_info_suggestions(
-            context,
-            class_id,
-            prefix,
-            prefix_length,
-            out
-          );
-        }
-      }
+    if (context->current_class_id != TI_CLASS_NONE) {
+      append_define_info_suggestions(
+        context,
+        context->current_class_id,
+        prefix,
+        prefix_length,
+        out
+      );
     }
 
     append_builtin_suggestions(
@@ -563,7 +648,7 @@ ti_collect_suggestions_at_cursor(
   }
 
   SuggestTargetSearch search = {
-    .expected_end = context->source + dot_offset,
+    .expected_end = prefix - 1,
     .target = NULL,
     .target_length = 0,
   };
@@ -674,6 +759,7 @@ ti_fill_suggestions_at_cursor(
   };
 
   if (!ti_did_arena_overflow()) {
+    ti_set_context_class_at_cursor(&context, root, cursor_byte_offset);
     ti_collect_suggestions_at_cursor(&context, root, cursor_byte_offset, out);
   }
 

@@ -9,5 +9,11 @@ uint16_t ti_bind_scalar_assignment(
   const pm_node_t *value,
   int depth
 );
+uint16_t ti_bind_instance_variable_assignment(
+  TiContext *context,
+  pm_constant_id_t constant_id,
+  const pm_node_t *value,
+  int depth
+);
 
 #endif
