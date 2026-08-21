@@ -124,7 +124,7 @@ func TestMakeDiagnosticsByPicoRuby(test *testing.T) {
 
 	diagnostics :=
 		typeInference.makeDiagnosticsByPicoRuby(
-			"\"x\".sub(1, \"a\")",
+			"\"x\".tr(1, \"a\")",
 		)
 
 	if len(diagnostics) != 1 {
@@ -133,16 +133,16 @@ func TestMakeDiagnosticsByPicoRuby(test *testing.T) {
 
 	diagnostic := diagnostics[0]
 
-	if diagnostic.startByteOffset != 8 || diagnostic.endByteOffset != 9 {
+	if diagnostic.startByteOffset != 7 || diagnostic.endByteOffset != 8 {
 		test.Fatalf(
-			"diagnostic offsets = %d:%d, want 8:9",
+			"diagnostic offsets = %d:%d, want 7:8",
 			diagnostic.startByteOffset,
 			diagnostic.endByteOffset,
 		)
 	}
 
 	expectedMessage :=
-		"type mismatch: expected String, but got Integer for String.sub"
+		"type mismatch: expected String, but got Integer for String.tr"
 
 	if diagnostic.message != expectedMessage {
 		test.Fatalf(
@@ -277,7 +277,7 @@ func TestMakeDiagnosticsByPicoRubyWithPreloadSources(test *testing.T) {
 		(&url.URL{Scheme: "file", Path: rubyDocumentPath}).String(),
 	)
 	combinedRubyCode, rubyCodeByteOffset :=
-		prependTiPreloadSources(documentURI, "value.sub(1, \"a\")")
+		prependTiPreloadSources(documentURI, "value.tr(1, \"a\")")
 	diagnostics := (&picorubyTypeInference{}).makeDiagnosticsByPicoRuby(
 		combinedRubyCode,
 	)
@@ -286,10 +286,10 @@ func TestMakeDiagnosticsByPicoRubyWithPreloadSources(test *testing.T) {
 		test.Fatalf("diagnostic count = %d, want 1", len(diagnostics))
 	}
 
-	if diagnostics[0].startByteOffset-rubyCodeByteOffset != 10 ||
-		diagnostics[0].endByteOffset-rubyCodeByteOffset != 11 {
+	if diagnostics[0].startByteOffset-rubyCodeByteOffset != 9 ||
+		diagnostics[0].endByteOffset-rubyCodeByteOffset != 10 {
 		test.Fatalf(
-			"diagnostic offsets = %d:%d, want 10:11",
+			"diagnostic offsets = %d:%d, want 9:10",
 			diagnostics[0].startByteOffset-rubyCodeByteOffset,
 			diagnostics[0].endByteOffset-rubyCodeByteOffset,
 		)
