@@ -173,6 +173,31 @@ ti_get_instance_variable_t(uint8_t object_class_id, uint16_t name_id) {
 }
 
 int
+ti_register_instance_variable_name_only(
+  uint8_t object_class_id,
+  uint16_t name_id
+) {
+
+  if (name_id == 0)
+    return 1;
+
+  TiTFrameEntry *entry =
+    find_t_frame_entry(object_class_id, name_id, TI_T_FRAME_INSTANCE_VARIABLE);
+
+  if (!entry)
+    return 0;
+
+  if (entry->name_id != 0)
+    return 1;
+
+  entry->name_id = name_id;
+  entry->object_class_id = object_class_id;
+  entry->entry_kind = (uint8_t)TI_T_FRAME_INSTANCE_VARIABLE;
+
+  return 1;
+}
+
+int
 ti_find_instance_variable_and_advance_slot(
   uint8_t object_class_id,
   int *search_slot_index,
