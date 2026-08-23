@@ -147,6 +147,18 @@ register_attribute(
     return;
   }
 
+  if (
+    !ti_register_instance_variable_name_only(
+      context->current_class_id,
+      attribute_name_id
+    )
+  ) {
+
+    context->failed = 1;
+
+    return;
+  }
+
   uint16_t instance_variable_t_node_index =
     ti_get_instance_variable_t(context->current_class_id, attribute_name_id);
 

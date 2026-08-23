@@ -319,6 +319,32 @@ test_attribute_reader_has_no_writer_suggestion(void) {
 }
 
 static void
+test_attribute_accessor_suggests_instance_variable_name(void) {
+  TiSuggestionList suggestions = suggest_source("class Holder\n"
+                                                "  attr_accessor :val\n"
+                                                "  def run\n"
+                                                "    @");
+  const TiSuggestion *suggestion = find_suggestion(&suggestions, "val");
+
+  assert(suggestion);
+  assert(strcmp(suggestion->detail, "val: untyped") == 0);
+}
+
+static void
+test_assignment_without_t_suggests_instance_variable_name(void) {
+  TiSuggestionList suggestions = suggest_source("class Holder\n"
+                                                "  def initialize(seed)\n"
+                                                "    @val = seed\n"
+                                                "  end\n"
+                                                "  def run\n"
+                                                "    @");
+  const TiSuggestion *suggestion = find_suggestion(&suggestions, "val");
+
+  assert(suggestion);
+  assert(strcmp(suggestion->detail, "val: untyped") == 0);
+}
+
+static void
 test_self_suggestion(void) {
   TiSuggestionList suggestions = suggest_source("class Holder\n"
                                                 "  def name = \"x\"\n"
@@ -354,6 +380,8 @@ main(void) {
   test_instance_variable_suggestion_is_scoped_to_class();
   test_attribute_accessor_suggestion();
   test_attribute_reader_has_no_writer_suggestion();
+  test_attribute_accessor_suggests_instance_variable_name();
+  test_assignment_without_t_suggests_instance_variable_name();
   test_self_suggestion();
 
   return 0;

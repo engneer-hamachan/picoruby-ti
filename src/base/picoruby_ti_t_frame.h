@@ -29,6 +29,10 @@ uint16_t ti_get_instance_variable_t(
   uint8_t object_class_id,
   uint16_t name_id
 );
+int ti_register_instance_variable_name_only(
+  uint8_t object_class_id,
+  uint16_t name_id
+);
 int ti_find_instance_variable_and_advance_slot(
   uint8_t object_class_id,
   int *search_slot_index,

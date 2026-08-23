@@ -47,8 +47,21 @@ ti_bind_instance_variable_assignment(
 
   uint16_t t_node_index = ti_eval_expression(context, value, depth + 1);
 
+  if (t_node_index == 0) {
+    if (
+      !ti_register_instance_variable_name_only(
+        context->current_class_id,
+        attribute_name_id
+      )
+    ) {
+
+      context->failed = 1;
+    }
+
+    return 0;
+  }
+
   if (
-    t_node_index != 0 &&
     !ti_set_instance_variable_t(
       context->current_class_id,
       attribute_name_id,
