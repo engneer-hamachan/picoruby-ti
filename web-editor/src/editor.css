@@ -1,0 +1,227 @@
+.pico-editor,
+.pico-editor-completion-popup,
+.pico-editor-hover-popup {
+	--pico-background: #1a1a1a;
+	--pico-foreground: #d4d4d4;
+	--pico-caret: #f8f8f2;
+	--pico-selection: rgba(100, 149, 237, 0.4);
+	--pico-placeholder: #444;
+	--pico-line-number: #858585;
+	--pico-active-line-number: #c6c6c6;
+	--pico-keyword: #c586c0;
+	--pico-literal: #569cd6;
+	--pico-constant: #4ec9b0;
+	--pico-method: #dcdcaa;
+	--pico-string: #ce9178;
+	--pico-escape: #d7ba7d;
+	--pico-regexp: #d16969;
+	--pico-number: #b5cea8;
+	--pico-comment: #6a9955;
+	--pico-special-variable: #9cdcfe;
+	--pico-popup-background: #252526;
+	--pico-popup-border: #454545;
+	--pico-popup-shadow: rgba(0, 0, 0, 0.5);
+	--pico-selected-item: #04395e;
+	color-scheme: dark;
+}
+
+[data-pico-theme="light"] {
+	--pico-background: #ffffff;
+	--pico-foreground: #24292f;
+	--pico-caret: #24292f;
+	--pico-selection: rgba(9, 105, 218, 0.25);
+	--pico-placeholder: #6e7781;
+	--pico-line-number: #6e7781;
+	--pico-active-line-number: #24292f;
+	--pico-keyword: #8250df;
+	--pico-literal: #0550ae;
+	--pico-constant: #116329;
+	--pico-method: #6639ba;
+	--pico-string: #0a3069;
+	--pico-escape: #953800;
+	--pico-regexp: #a40e26;
+	--pico-number: #0550ae;
+	--pico-comment: #57606a;
+	--pico-special-variable: #953800;
+	--pico-popup-background: #f6f8fa;
+	--pico-popup-border: #d0d7de;
+	--pico-popup-shadow: rgba(0, 0, 0, 0.15);
+	--pico-selected-item: #ddf4ff;
+	color-scheme: light;
+}
+
+.pico-editor-textarea,
+.pico-editor-highlight-content {
+	font-family: "Courier Prime", Courier, monospace;
+	font-size: var(--pico-font-size, 15px);
+	line-height: 1.5;
+	white-space: pre;
+	padding: 8px 8px 8px 3.6667em;
+	tab-size: 2;
+}
+
+.pico-editor-textarea {
+	overflow: auto;
+	flex: 1;
+	width: 100%;
+	background: transparent;
+	color: transparent;
+	caret-color: var(--pico-caret);
+	position: relative;
+	z-index: 1;
+	border: none;
+	outline: none;
+	box-sizing: border-box;
+	margin: 0;
+	resize: none;
+	display: block;
+}
+
+.pico-editor-textarea::selection {
+	background: var(--pico-selection);
+}
+
+.pico-editor-textarea::placeholder {
+	color: var(--pico-placeholder);
+	font-style: italic;
+}
+
+.pico-editor {
+	font-size: var(--pico-font-size, 15px);
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	overflow: hidden;
+	background: var(--pico-background);
+}
+
+.pico-editor-highlight-layer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	min-width: 100%;
+	overflow: visible;
+	pointer-events: none;
+	z-index: 0;
+}
+
+.pico-editor-highlight-content {
+	color: var(--pico-foreground);
+}
+
+.pico-editor-line-numbers {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 2.6667em;
+	height: 100%;
+	overflow: hidden;
+	background: var(--pico-background);
+	pointer-events: none;
+	z-index: 5; /* Keep line numbers above the editor and highlight layer. */
+}
+
+.pico-editor-line-numbers-inner {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 2.6667em;
+	font-family: "Courier Prime", Courier, monospace;
+	font-size: var(--pico-font-size, 15px);
+	line-height: 1.5;
+	padding: 8px 6px 8px 0;
+	box-sizing: border-box;
+	text-align: right;
+	white-space: pre;
+	user-select: none;
+}
+
+.pico-editor .line-number {
+	color: var(--pico-line-number);
+	line-height: inherit;
+}
+
+.pico-editor .line-number.active {
+	color: var(--pico-active-line-number);
+}
+
+.pico-editor .hl-keyword {
+	color: var(--pico-keyword);
+}
+.pico-editor .hl-builtin-literal,
+.pico-editor .hl-symbol,
+.pico-editor .hl-interpolation {
+	color: var(--pico-literal);
+}
+.pico-editor .hl-constant {
+	color: var(--pico-constant);
+}
+.pico-editor .hl-method {
+	color: var(--pico-method);
+}
+.pico-editor .hl-string {
+	color: var(--pico-string);
+}
+.pico-editor .hl-escape {
+	color: var(--pico-escape);
+}
+.pico-editor .hl-regexp {
+	color: var(--pico-regexp);
+}
+.pico-editor .hl-number {
+	color: var(--pico-number);
+}
+.pico-editor .hl-comment {
+	color: var(--pico-comment);
+}
+.pico-editor .hl-special-variable {
+	color: var(--pico-special-variable);
+}
+.pico-editor .hl-default {
+	color: var(--pico-foreground);
+}
+
+.pico-editor-completion-popup,
+.pico-editor-hover-popup {
+	position: fixed;
+	z-index: 10; /* Keep popups above the line numbers. */
+	font-family: "Courier Prime", Courier, monospace;
+	font-size: calc(var(--pico-font-size, 15px) - 2px);
+	line-height: 1.5;
+	background: var(--pico-popup-background);
+	color: var(--pico-foreground);
+	border: 1px solid var(--pico-popup-border);
+	box-shadow: 0 2px 8px var(--pico-popup-shadow);
+}
+
+.pico-editor-completion-popup {
+	min-width: 160px;
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.pico-editor-completion-popup .completion-item {
+	padding: 0 8px;
+	white-space: pre;
+}
+
+.pico-editor-completion-popup .completion-item.selected {
+	background: var(--pico-selected-item);
+}
+
+.pico-editor-completion-popup .completion-contents {
+	color: var(--pico-method);
+}
+
+.pico-editor-completion-popup .completion-detail {
+	margin-left: 12px;
+	color: var(--pico-line-number);
+}
+
+.pico-editor-hover-popup {
+	max-width: 480px;
+	padding: 4px 8px;
+	white-space: pre-wrap;
+	pointer-events: none;
+}
