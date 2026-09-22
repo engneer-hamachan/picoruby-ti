@@ -1,0 +1,60 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>pico-editor example</title>
+  <link rel="stylesheet" href="../src/editor.css">
+  <style>
+    .toolbar { display: flex; gap: 16px; margin-bottom: 8px; }
+    #my-editor { height: 400px; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <label>Theme
+      <select id="theme">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+      </select>
+    </label>
+    <label>Font size
+      <select id="font-size">
+        <option>12</option>
+        <option selected>15</option>
+        <option>18</option>
+        <option>24</option>
+        <option>32</option>
+      </select> px
+    </label>
+  </div>
+  <div id="my-editor"></div>
+
+  <script type="module" src="../src/js/prismLoader.js"></script>
+  <script type="module" src="../../wasm/tiLoader.js"></script>
+  <script type="text/ruby" src="../src/ruby/support/tokenizer.rb"></script>
+  <script type="text/ruby" src="../src/ruby/support/text_position.rb"></script>
+  <script type="text/ruby" src="../src/ruby/features/highlight.rb"></script>
+  <script type="text/ruby" src="../src/ruby/features/auto_indent.rb"></script>
+  <script type="text/ruby" src="../src/ruby/features/line_numbers.rb"></script>
+  <script type="text/ruby" src="../src/ruby/features/completion.rb"></script>
+  <script type="text/ruby" src="../src/ruby/features/hover.rb"></script>
+  <script type="text/ruby" src="../src/ruby/editor_event_handler.rb"></script>
+  <script type="text/ruby" src="../src/ruby/pico_editor.rb"></script>
+
+  <script type="text/ruby">
+    editor = PicoEditor.new(JS.document.getElementById('my-editor'))
+    editor.value = "class Foo\n  def bar\n    puts 1\n  end\nend\n"
+
+    theme_select = JS.document.getElementById('theme')
+    theme_select.addEventListener('change') do
+      editor.theme = theme_select[:value].to_s
+    end
+
+    font_size_select = JS.document.getElementById('font-size')
+    font_size_select.addEventListener('change') do
+      editor.font_size = font_size_select[:value].to_s.to_i
+    end
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@picoruby/wasm-wasi@latest/dist/init.iife.js"></script>
+</body>
+</html>
