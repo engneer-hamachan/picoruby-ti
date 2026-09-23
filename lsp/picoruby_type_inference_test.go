@@ -27,7 +27,7 @@ func TestMakeClassesByPicoRubyIncludesBuiltinAndDefinedClasses(test *testing.T) 
 
 func TestMakeMethodsByPicoRubyReturnsInstanceAndStaticMethods(test *testing.T) {
 	typeInference := &picorubyTypeInference{}
-	methods, classFound := typeInference.makeMethodsByPicoRuby("", "String")
+	methods, classFound := typeInference.makeMethodsByPicoRuby("", "String", false)
 
 	if !classFound {
 		test.Fatal("String is unavailable")
@@ -57,7 +57,7 @@ func TestMakeMethodsByPicoRubyReturnsDefinedMethodSignature(test *testing.T) {
 	rubyCode :=
 		"class UserClass\n  def answer(value, *values, **options) = 1\nend"
 	methods, classFound :=
-		typeInference.makeMethodsByPicoRuby(rubyCode, "UserClass")
+		typeInference.makeMethodsByPicoRuby(rubyCode, "UserClass", false)
 
 	if !classFound {
 		test.Fatal("UserClass is unavailable")
@@ -87,12 +87,37 @@ func TestMakeMethodsByPicoRubyReturnsDefinedMethodSignature(test *testing.T) {
 func TestMakeMethodsByPicoRubyReportsUnavailableClass(test *testing.T) {
 	typeInference := &picorubyTypeInference{}
 	methods, classFound :=
-		typeInference.makeMethodsByPicoRuby("", "UnavailableClass")
+		typeInference.makeMethodsByPicoRuby("", "UnavailableClass", false)
 
 	if classFound {
 		test.Fatal("UnavailableClass is available")
 	}
 	if len(methods) != 0 {
 		test.Fatalf("method count = %d, want 0", len(methods))
+	}
+}
+
+func TestMakeMethodsByPicoRubyExcludesObjectMethods(test *testing.T) {
+	typeInference := &picorubyTypeInference{}
+	methods, classFound :=
+		typeInference.makeMethodsByPicoRuby("", "Integer", true)
+
+	if !classFound {
+		test.Fatal("Integer is unavailable")
+	}
+
+	foundTimes := false
+
+	for _, method := range methods {
+		if method.Name == "block_given?" {
+			test.Fatal("Object method block_given? is included")
+		}
+		if method.Name == "times" {
+			foundTimes = true
+		}
+	}
+
+	if !foundTimes {
+		test.Fatal("Integer method times is unavailable")
 	}
 }

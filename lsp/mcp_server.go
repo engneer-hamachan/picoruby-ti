@@ -27,10 +27,6 @@ type methodsInput struct {
 	ClassName string `json:"class_name" jsonschema:"class name whose methods are requested"`
 }
 
-type diagnosticOutput struct {
-	Diagnostics []lsp.Diagnostic `json:"diagnostics"`
-}
-
 type completionOutput struct {
 	CompletionItems []lsp.CompletionItem `json:"completion_items"`
 }
@@ -68,14 +64,6 @@ func (toolHandler *mcpToolHandler) registerTools(mcpServer *mcp.Server) {
 	mcp.AddTool(
 		mcpServer,
 		&mcp.Tool{
-			Name:        "diagnostic",
-			Description: "Return picoruby-ti diagnostics for a Ruby file.",
-		},
-		toolHandler.diagnosticTool,
-	)
-	mcp.AddTool(
-		mcpServer,
-		&mcp.Tool{
 			Name:        "completion",
 			Description: "Return picoruby-ti completion items at an LSP position in a Ruby file.",
 		},
@@ -105,66 +93,14 @@ func (toolHandler *mcpToolHandler) registerTools(mcpServer *mcp.Server) {
 		},
 		toolHandler.methodsTool,
 	)
-}
-
-func (toolHandler *mcpToolHandler) diagnosticTool(
-	_ context.Context,
-	_ *mcp.CallToolRequest,
-	input fileInput,
-) (*mcp.CallToolResult, diagnosticOutput, error) {
-
-	rubyDocument, readError := readRubyDocument(input.FilePath)
-	if readError != nil {
-		return nil, diagnosticOutput{}, readError
-	}
-
-	combinedRubyCode, rubyCodeByteOffset :=
-		prependTiPreloadSources(
-			rubyDocument.URI(),
-			rubyDocument.Text(),
-		)
-
-	rubyCodeEndByteOffset := rubyCodeByteOffset + len(rubyDocument.Text())
-
-	engineDiagnostics :=
-		toolHandler.typeInference.makeDiagnosticsByPicoRuby(combinedRubyCode)
-
-	diagnosticSeverity := lsp.SeverityError
-	diagnostics := make([]lsp.Diagnostic, 0, len(engineDiagnostics))
-
-	for _, engineDiagnostic := range engineDiagnostics {
-		if engineDiagnostic.startByteOffset < rubyCodeByteOffset ||
-			engineDiagnostic.endByteOffset > rubyCodeEndByteOffset {
-			continue
-		}
-
-		startPosition, startPositionError :=
-			rubyDocument.PositionAt(
-				engineDiagnostic.startByteOffset - rubyCodeByteOffset,
-			)
-
-		if startPositionError != nil {
-			continue
-		}
-
-		endPosition, endPositionError :=
-			rubyDocument.PositionAt(
-				engineDiagnostic.endByteOffset - rubyCodeByteOffset,
-			)
-
-		if endPositionError != nil {
-			continue
-		}
-
-		diagnostics = append(diagnostics, lsp.Diagnostic{
-			Range:    lsp.Range{Start: startPosition, End: endPosition},
-			Severity: &diagnosticSeverity,
-			Source:   "picoruby-ti",
-			Message:  engineDiagnostic.message,
-		})
-	}
-
-	return nil, diagnosticOutput{Diagnostics: diagnostics}, nil
+	mcp.AddTool(
+		mcpServer,
+		&mcp.Tool{
+			Name:        "methods_without_object",
+			Description: "Return instance and static methods for a picoruby-ti class, excluding methods inherited from Object.",
+		},
+		toolHandler.methodsWithoutObjectTool,
+	)
 }
 
 func (toolHandler *mcpToolHandler) completionTool(
@@ -262,6 +198,23 @@ func (toolHandler *mcpToolHandler) methodsTool(
 	input methodsInput,
 ) (*mcp.CallToolResult, methodsOutput, error) {
 
+	return toolHandler.makeMethodsToolResult(input, false)
+}
+
+func (toolHandler *mcpToolHandler) methodsWithoutObjectTool(
+	_ context.Context,
+	_ *mcp.CallToolRequest,
+	input methodsInput,
+) (*mcp.CallToolResult, methodsOutput, error) {
+
+	return toolHandler.makeMethodsToolResult(input, true)
+}
+
+func (toolHandler *mcpToolHandler) makeMethodsToolResult(
+	input methodsInput,
+	excludeObjectMethods bool,
+) (*mcp.CallToolResult, methodsOutput, error) {
+
 	rubyDocument, readError := readRubyDocument(input.FilePath)
 	if readError != nil {
 		return nil, methodsOutput{}, readError
@@ -277,6 +230,7 @@ func (toolHandler *mcpToolHandler) methodsTool(
 		toolHandler.typeInference.makeMethodsByPicoRuby(
 			combinedRubyCode,
 			input.ClassName,
+			excludeObjectMethods,
 		)
 
 	if !classFound {

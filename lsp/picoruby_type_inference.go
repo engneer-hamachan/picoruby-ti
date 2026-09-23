@@ -295,7 +295,8 @@ picoruby_ti_fill_methods(
   int requested_class_name_byte_length,
   PicoRubyTiMethod *methods,
   int method_capacity,
-  int *class_found
+  int *class_found,
+  int exclude_object_methods
 ) {
   TiSource source_item;
   TiSourceList sources =
@@ -329,6 +330,15 @@ picoruby_ti_fill_methods(
     ) {
       const TiBuiltinMethod *method =
         &ti_builtin_methods[builtin_class->instance_method_start_index + index];
+
+      if (
+        exclude_object_methods &&
+        builtin_class_id != TI_CLASS_OBJECT &&
+        method->origin_class_identifier == TI_CLASS_OBJECT
+      ) {
+        continue;
+      }
+
       const char *method_name = ti_get_builtin_method_name(method);
 
       methods[method_count].name = method_name;
@@ -347,6 +357,15 @@ picoruby_ti_fill_methods(
     ) {
       const TiBuiltinMethod *method =
         &ti_builtin_methods[builtin_class->static_method_start_index + index];
+
+      if (
+        exclude_object_methods &&
+        builtin_class_id != TI_CLASS_OBJECT &&
+        method->origin_class_identifier == TI_CLASS_OBJECT
+      ) {
+        continue;
+      }
+
       const char *method_name = ti_get_builtin_method_name(method);
 
       methods[method_count].name = method_name;
@@ -638,6 +657,7 @@ func (typeInference *picorubyTypeInference) makeClassesByPicoRuby(
 func (typeInference *picorubyTypeInference) makeMethodsByPicoRuby(
 	rubyCode string,
 	className string,
+	excludeObjectMethods bool,
 ) ([]picorubyMethod, bool) {
 
 	typeInference.typeInferenceMutex.Lock()
@@ -651,6 +671,11 @@ func (typeInference *picorubyTypeInference) makeMethodsByPicoRuby(
 
 	engineMethods := make([]C.PicoRubyTiMethod, 512)
 	classFound := C.int(0)
+	excludeObjectMethodsFlag := C.int(0)
+
+	if excludeObjectMethods {
+		excludeObjectMethodsFlag = 1
+	}
 
 	methodCount :=
 		C.picoruby_ti_fill_methods(
@@ -661,6 +686,7 @@ func (typeInference *picorubyTypeInference) makeMethodsByPicoRuby(
 			&engineMethods[0],
 			C.int(len(engineMethods)),
 			&classFound,
+			excludeObjectMethodsFlag,
 		)
 
 	methods := make([]picorubyMethod, int(methodCount))
