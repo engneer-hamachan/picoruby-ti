@@ -63,6 +63,23 @@ src/generated/picoruby_ti_builtin_database.h
 If any required declarations are missing, the command reports a
 `required RBS declarations are missing` error.
 
+### Use as a web editor
+
+[`web-editor/`](web-editor/README.md) provides a browser-based Ruby editor running
+on PicoRuby.wasm, with syntax highlighting, line numbers, auto indent, completion
+and hover. It uses the TI module and JavaScript API in `wasm/`.
+
+After completing the prerequisites above, build the WASM module with Docker
+and serve the repository root:
+
+```sh
+make wasm
+python3 -m http.server 8000
+```
+
+Open http://localhost:8000/web-editor/example/index.html. See the
+[web editor README](web-editor/README.md) for embedding instructions and the Ruby API.
+
 ### Use as an LSP server
 
 This example combines Go with picoruby-ti to provide an LSP server for

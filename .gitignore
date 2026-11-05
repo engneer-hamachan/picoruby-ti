@@ -6,4 +6,6 @@
 /host_test/test_builtin
 /host_test/test_eval
 /host_test/test_suggest
+/wasm/build/
+/wasm/picoruby_ti.wasm
 sample.rb
